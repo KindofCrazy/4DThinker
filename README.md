@@ -1,0 +1,250 @@
+<div align="center">
+<h1>4DThinker: Thinking with 4D Imagery for Dynamic Spatial Understanding</h1>
+</div>
+
+## Overview
+
+<img src="assets/pipeline.png" alt="drawing" width="500"/>
+
+## Introduction
+Dynamic spatial reasoning from monocular video is essential for bridging visual intelligence and the physical world, yet remains challenging for vision-language models (VLMs). Prior approaches either verbalize spatial-temporal reasoning entirely as text, which is inherently verbose and imprecise for complex dynamics, or rely on external geometric modules that increase inference complexity without fostering intrinsic model capability. In this paper, we present 4DThinker, the first framework that enables VLMs to "think with 4D" through dynamic latent mental imagery, i.e., internally simulating how scenes evolve within the continuous hidden space. Specifically, we first introduce a scalable, annotation-free data generation pipeline that synthesizes 4D reasoning data from raw videos. We then propose Dynamic-Imagery Fine-Tuning (DIFT), which jointly supervises textual tokens and 4D latents to ground the model in dynamic visual semantics. Building on this, 4D Reinforcement Learning (4DRL) further tackles complex reasoning tasks via outcome-based rewards, restricting policy gradients to text tokens to ensure stable optimization. Extensive experiments across multiple dynamic spatial reasoning benchmarks demonstrate that 4DThinker consistently outperforms strong baselines and offers a new perspective toward 4D reasoning in VLMs.
+
+## Project Structure
+
+```
+4DThinker/
+├── README.md
+├── LICENSE.txt
+├── .gitignore
+├── dift/                        # DIFT training code
+│   ├── src/                     # main.py, trainer.py, task.py, utils.py, inference.py
+│   ├── transformers/            # Custom Qwen2.5-VL transformers fork
+│   ├── configs/                 # DeepSpeed configs (ds_zero2.json, ds_zero3.json)
+│   ├── train.sh                 # Multi-GPU training script
+│   ├── train_single_gpu.sh      # Single-GPU training script
+│   └── requirements_dift.txt
+├── 4drl/                        # 4DRL (GRPO) training code
+│   ├── src/open-r1-multimodal/  # RL trainer package
+│   ├── transformers_rl/         # Custom transformers fork for RL
+│   ├── trl/                     # Modified trl package
+│   ├── run_scripts/             # train_4dthinker.sh
+│   ├── configs/                 # DeepSpeed configs
+│   └── requirements_4drl.txt
+├── evaluation/                  # DSR benchmark evaluation
+│   ├── dsr_eval.py
+│   ├── batch_dsr_eval.sh
+│   └── results/                 # Evaluation output
+├── preprocess/                  # Data generation pipeline
+│   ├── run.sh                   # Entry point: loops process_minibatch.py
+│   ├── process_minibatch.py     # Frame extraction + SAM3 masks + object detection
+│   ├── merge_jsonl.py           # Merge per-video data.jsonl
+│   ├── generate_camera_qa.py    # Camera movement QA + CoT
+│   ├── generate_dynamic_qa.py   # Object motion QA + CoT
+│   ├── convert_format.py        # Convert to training JSONL format
+│   ├── check_output_image.py    # Validate <output_image> tags
+│   └── sam3/                    # SAM3 segmentation model
+├── data/                        # Training data (JSONL on GitHub; media on HuggingFace)
+│   ├── dift_data.jsonl          # [HuggingFace] DIFT training data (38K samples)
+│   ├── 4drl_data_filtered.jsonl # [HuggingFace] 4DRL training data (37K samples)
+│   └── processed_data/          # [HuggingFace] Video frames & masks
+├── raw_data/                    # [HuggingFace] Evaluation benchmark data
+└── model/                       # [HuggingFace] Model checkpoints
+    ├── dift/                    # DIFT checkpoint
+    └── 4drl/                    # 4DRL checkpoint
+```
+
+> **Note**: `data/`, `raw_data/`, and `model/` are hosted on HuggingFace due to their large size. See the respective HuggingFace repositories for download instructions.
+
+## Training Pipeline
+
+The training has two stages:
+
+1. **DIFT** — Dynamic-Imagery Fine-Tuning.
+2. **4DRL** — 4D Reinforcement learning.
+
+## Installation
+
+### DIFT Environment
+
+```bash
+conda create -n 4dthinker python=3.10 -y
+conda activate 4dthinker
+
+pip install -r dift/requirements_dift.txt
+cd dift
+pip install -e ./transformers/
+```
+
+### 4DRL Environment
+
+```bash
+conda create -n 4dthinker-rl python=3.10 -y
+conda activate 4dthinker-4drl
+
+pip install -r 4drl/requirements_4drl.txt
+cd 4drl
+pip install -e ./transformers_rl/
+cp -rf ./trl $(python -c "import site; print(site.getsitepackages()[0])")/trl
+# Install RL trainer
+pip install -e ./src/open-r1-multimodal/
+```
+
+### Preprocess Environment (optional)
+
+```bash
+cd preprocess/sam3
+pip install -e .
+```
+
+## Data Preprocessing
+
+The `preprocess/` directory contains the full annotation-free data generation pipeline. Starting from raw SpatialVID videos, it produces structured 4D reasoning data (CoT interleaved with dynamic mental imagery).
+
+### Pipeline Overview
+<img src="assets/data_gen.png" alt="drawing" width="500"/>
+
+```
+SpatialVID videos + annotations
+        |
+        v
++---------------------------+
+|  Step 1: run.sh           |  Loops process_minibatch.py until all videos are done.
+|  (process_minibatch.py)   |  Extracts frames, identifies static/dynamic objects via
+|                           |  LLM, generates SAM3 masks, and produces mask overlays.
++---------------------------+
+        |
+        v
++---------------------------+
+|  Step 2: merge_jsonl.py   |  Merges per-video data.jsonl into a single file.
++---------------------------+
+        |
+        v
++---------------------------+
+|  Step 3: QA Generation    |  generate_camera_qa.py — camera motion MCQ + CoT
+|                           |  generate_dynamic_qa.py — object motion MCQ + CoT
++---------------------------+
+        |
+        v
++---------------------------+
+|  Step 4: Post-processing  |  convert_format.py — converts to DIFT training format
+|                           |  check_output_image.py — validates <output_image> count
++---------------------------+
+```
+
+### Prerequisites
+
+- SAM3 model checkpoint at `preprocess/sam3/models/sam3.pt`
+- SpatialVID data (videos + annotations + metadata CSV)
+- OpenAI-compatible API access (for Gemini-based QA generation)
+
+### Usage
+
+```bash
+cd preprocess
+
+# Set environment variables
+export OPENAI_API_KEY=your_api_key
+export OPENAI_BASE_URL=https://api.openai.com/v1
+export DATA_BASE_DIR=/path/to/your/data
+
+# Step 1: Process videos (frame extraction + SAM3 masks + object identification)
+# This script loops automatically until all videos are processed.
+bash run.sh
+
+# Step 2: Merge per-video results into a single JSONL
+python merge_jsonl.py
+
+# Step 3: Generate motion QA pairs with imagery-based CoT
+python generate_camera_qa.py    # Camera motion questions
+python generate_dynamic_qa.py   # Object motion questions
+
+# Step 4: Convert to training format and validate
+python convert_format.py ./camera_data_qa_all.jsonl ./camera_qa_converted.jsonl
+python convert_format.py ./dynamic_data_qa_all.jsonl ./dynamic_qa_converted.jsonl
+python check_output_image.py ./camera_qa_converted.jsonl
+python check_output_image.py ./dynamic_qa_converted.jsonl
+```
+
+### Output
+
+The final outputs are JSONL files ready for DIFT training, with each sample containing:
+- Multiple-choice question about camera/object motion
+- CoT reasoning with `<output_image>` placeholders
+- Paths to input video frames and target mask overlay images
+
+
+## Training
+
+### Special tokens
+
+The model adds three special tokens to vocabulary:
+- `<|latent_pad|>` — Padding within latent sequences
+- `<|latent_start|>` — Marks start of latent visual token block
+- `<|latent_end|>` — Marks end of latent visual token block
+
+### Training Dataset
+
+Under `data/` folder:
+1. `dift_data.jsonl`
+2. `4drl_data_filtered.jsonl`
+
+### DIFT Training
+```bash
+conda activate 4dthinker
+bash dift/train.sh
+
+or
+
+bash dift/train_single_gpu.sh
+```
+
+Key arguments:
+- `MODEL_PATH`: Path to Qwen2.5-VL-3B-Instruct base model
+- `DATA_PATH`: Path to `dift_data.jsonl`
+- `--latent_size`: Number of latent tokens per image (default: 4)
+- `--ce_weight` / `--sim_weight`: Loss weights (default: 0.1 / 1.0)
+
+### 4DRL Training
+
+```bash
+conda activate 4dthinker-4drl
+bash 4drl/run_scripts/train_4dthinker.sh
+```
+
+Key arguments:
+- `MODEL_PATH`: Path to DIFT checkpoint directory
+- `DATA_PATH`: Path to `4drl_data_filtered.jsonl`
+
+## Inference
+
+see `dift/src/inference.py`
+
+## Evaluation
+On DSR benchmark:
+
+```bash
+conda activate 4dthinker
+# Single model evaluation
+CUDA_VISIBLE_DEVICES=0 python evaluation/dsr_eval.py \
+    --model_path model/dift/checkpoints \
+    --benchmark_path ./raw_data/DSR_Suite-Data/benchmark.parquet \
+    --video_root ./raw_data/DSR-data/bmk_video \
+    --latent_size 4
+
+# Batch evaluation (multiple checkpoints in parallel)
+bash evaluation/batch_dsr_eval.sh
+```
+
+## Citation
+
+```bibtex
+@article{4dthinker2025,
+  title={4DThinker: Reasoning with Latent Visual Tokens for Dynamic Scene Understanding},
+  author={},
+  year={2025}
+}
+```
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE.txt) file for details.

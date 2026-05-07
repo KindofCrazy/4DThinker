@@ -1,0 +1,20 @@
+torch>=2.9.0
+torchvision>=0.24.0
+# transformers: install from the bundled fork (code/4drl/transformers_rl/)
+#   pip install -e ./transformers_rl/
+# trl: copy the bundled package directly to site-packages
+#   cp -rf ./trl $(python -c "import site; print(site.getsitepackages()[0])")/trl
+# RL trainer: install from source
+#   pip install -e ./src/open-r1-multimodal/
+accelerate>=1.13.0
+deepspeed>=0.15.0
+datasets>=4.8.0
+qwen-vl-utils>=0.0.14
+Pillow>=12.0.0
+numpy>=2.2.0
+decord>=0.6.0
+opencv-python>=4.13.0
+pandas>=2.3.0
+bitsandbytes>=0.49.0
+scipy>=1.15.0
+sentencepiece>=0.2.0

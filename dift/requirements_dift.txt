@@ -1,0 +1,14 @@
+torch>=2.9.0
+torchvision>=0.24.0
+# transformers: install from the bundled fork (code/train/transformers/)
+#   pip install -e ./transformers/
+trl==0.15.2
+accelerate>=1.13.0
+deepspeed>=0.18.0
+datasets>=4.8.0
+qwen-vl-utils>=0.0.14
+Pillow>=12.0.0
+numpy>=2.2.0
+decord>=0.6.0
+opencv-python>=4.13.0
+pandas>=2.3.0

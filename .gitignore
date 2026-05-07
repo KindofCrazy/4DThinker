@@ -1,0 +1,27 @@
+# Large data files (hosted on HuggingFace)
+data/
+raw_data/
+model/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.so
+
+# Training artifacts
+cache/
+outputs/
+*.log
+wandb/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
