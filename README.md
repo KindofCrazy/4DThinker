@@ -43,10 +43,10 @@ Dynamic spatial reasoning from monocular video is essential for bridging visual 
 │   ├── convert_format.py        # Convert to training JSONL format
 │   ├── check_output_image.py    # Validate <output_image> tags
 │   └── sam3/                    # SAM3 segmentation model
-├── data/                        # Training data (JSONL on GitHub; media on HuggingFace)
-│   ├── dift_data.jsonl          # [HuggingFace] DIFT training data (38K samples)
-│   ├── 4drl_data_filtered.jsonl # [HuggingFace] 4DRL training data (37K samples)
-│   └── processed_data/          # [HuggingFace] Video frames & masks
+├── data/                        # [HuggingFace] Training data (JSONL on GitHub; media on HuggingFace)
+│   ├── dift_data.jsonl          # DIFT training data (38K samples)
+│   ├── 4drl_data_filtered.jsonl # 4DRL training data (37K samples)
+│   └── processed_data/          # Video frames & masks
 ├── raw_data/                    # [HuggingFace] Evaluation benchmark data
 └── model/                       # [HuggingFace] Model checkpoints
     ├── dift/                    # DIFT checkpoint
