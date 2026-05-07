@@ -51,11 +51,11 @@ Dynamic spatial reasoning from monocular video is essential for bridging visual 
 │   ├── convert_format.py        # Convert to training JSONL format
 │   ├── check_output_image.py    # Validate <output_image> tags
 │   └── sam3/                    # SAM3 segmentation model
-├── data/                        # [HuggingFace] Training data (JSONL on GitHub; media on HuggingFace)
+├── data/                        # [HuggingFace] Training data
 │   ├── dift_data.jsonl          # DIFT training data (38K samples)
 │   ├── 4drl_data_filtered.jsonl # 4DRL training data (37K samples)
 │   └── processed_data/          # Video frames & masks
-├── raw_data/                    # [HuggingFace] Evaluation benchmark data
+├── raw_data/                    # [Downloading yourself] Evaluation benchmark data
 └── model/                       # [HuggingFace] Model checkpoints
     ├── dift/                    # DIFT checkpoint
     └── 4drl/                    # 4DRL checkpoint
@@ -99,7 +99,7 @@ pip install -e ./src/open-r1-multimodal/
 
 ## Data Preprocessing
 
-The `preprocess/` directory contains the full annotation-free data generation pipeline. Starting from raw SpatialVID videos, it produces structured 4D reasoning data (CoT interleaved with dynamic mental imagery).
+The `preprocess/` directory contains the full annotation-free data generation pipeline. Starting from raw SpatialVID videos, it produces structured 4D reasoning data (CoT interleaved with dynamic mental imagery). The preprocessed dataset is in [here](https://huggingface.co/datasets/jankin123/4DThinker-Training-Data).
 
 ### Pipeline Overview
 <img src="assets/data_gen.png" alt="drawing" width="500"/>
@@ -139,6 +139,8 @@ python check_output_image.py ./dynamic_qa_converted.jsonl
 ```
 
 ## Training
+
+A demo trained checkpoints from Qwen2.5-VL-3B is in [here](https://huggingface.co/jankin123/4DThinker-3B). 
 
 ### DIFT Training
 ```bash
@@ -185,4 +187,21 @@ CUDA_VISIBLE_DEVICES=0 python evaluation/dsr_eval.py \
 
 # Batch evaluation (multiple checkpoints in parallel)
 bash evaluation/batch_dsr_eval.sh
+```
+
+## Acknowledgements
+The repo also benifits form [SpatialVID](https://huggingface.co/datasets/SpatialVID/SpatialVID), [DSR_Suite](https://huggingface.co/datasets/TencentARC/DSR_Suite-Data), [Dyn-Bench](https://huggingface.co/datasets/yu2hi13/Dyn-Bench), [Mirage](https://github.com/UMass-Embodied-AGI/Mirage), [trl](https://github.com/huggingface/trl), [transformers](https://github.com/huggingface/transformers), [SAM3](https://github.com/facebookresearch/sam3).
+
+Thanks for their wonderful works.
+
+## Bibtex
+If you find 4DThinker helpful for your work, please cite
+
+```
+@article{4dthinker,
+  title={4DThinker: Thinking with 4D Imagery for Dynamic Spatial Understanding},
+  author={},
+  journal={},
+  year={2026}
+}
 ```
