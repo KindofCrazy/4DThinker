@@ -55,14 +55,14 @@ Dynamic spatial reasoning from monocular video is essential for bridging visual 
 
 > **Note**: `data/`, `raw_data/`, and `model/` are hosted on HuggingFace due to their large size. See the respective HuggingFace repositories for download instructions.
 
-## Training Pipeline
+## Env Setup
 
-The training has two stages:
+### Preprocess Environment (optional)
 
-1. **DIFT** — Dynamic-Imagery Fine-Tuning.
-2. **4DRL** — 4D Reinforcement learning.
-
-## Installation
+```bash
+cd preprocess/sam3
+pip install -e .
+```
 
 ### DIFT Environment
 
@@ -89,47 +89,12 @@ cp -rf ./trl $(python -c "import site; print(site.getsitepackages()[0])")/trl
 pip install -e ./src/open-r1-multimodal/
 ```
 
-### Preprocess Environment (optional)
-
-```bash
-cd preprocess/sam3
-pip install -e .
-```
-
 ## Data Preprocessing
 
 The `preprocess/` directory contains the full annotation-free data generation pipeline. Starting from raw SpatialVID videos, it produces structured 4D reasoning data (CoT interleaved with dynamic mental imagery).
 
 ### Pipeline Overview
 <img src="assets/data_gen.png" alt="drawing" width="500"/>
-
-```
-SpatialVID videos + annotations
-        |
-        v
-+---------------------------+
-|  Step 1: run.sh           |  Loops process_minibatch.py until all videos are done.
-|  (process_minibatch.py)   |  Extracts frames, identifies static/dynamic objects via
-|                           |  LLM, generates SAM3 masks, and produces mask overlays.
-+---------------------------+
-        |
-        v
-+---------------------------+
-|  Step 2: merge_jsonl.py   |  Merges per-video data.jsonl into a single file.
-+---------------------------+
-        |
-        v
-+---------------------------+
-|  Step 3: QA Generation    |  generate_camera_qa.py — camera motion MCQ + CoT
-|                           |  generate_dynamic_qa.py — object motion MCQ + CoT
-+---------------------------+
-        |
-        v
-+---------------------------+
-|  Step 4: Post-processing  |  convert_format.py — converts to DIFT training format
-|                           |  check_output_image.py — validates <output_image> count
-+---------------------------+
-```
 
 ### Prerequisites
 
@@ -165,28 +130,7 @@ python check_output_image.py ./camera_qa_converted.jsonl
 python check_output_image.py ./dynamic_qa_converted.jsonl
 ```
 
-### Output
-
-The final outputs are JSONL files ready for DIFT training, with each sample containing:
-- Multiple-choice question about camera/object motion
-- CoT reasoning with `<output_image>` placeholders
-- Paths to input video frames and target mask overlay images
-
-
 ## Training
-
-### Special tokens
-
-The model adds three special tokens to vocabulary:
-- `<|latent_pad|>` — Padding within latent sequences
-- `<|latent_start|>` — Marks start of latent visual token block
-- `<|latent_end|>` — Marks end of latent visual token block
-
-### Training Dataset
-
-Under `data/` folder:
-1. `dift_data.jsonl`
-2. `4drl_data_filtered.jsonl`
 
 ### DIFT Training
 ```bash
@@ -234,17 +178,3 @@ CUDA_VISIBLE_DEVICES=0 python evaluation/dsr_eval.py \
 # Batch evaluation (multiple checkpoints in parallel)
 bash evaluation/batch_dsr_eval.sh
 ```
-
-## Citation
-
-```bibtex
-@article{4dthinker2025,
-  title={4DThinker: Reasoning with Latent Visual Tokens for Dynamic Scene Understanding},
-  author={},
-  year={2025}
-}
-```
-
-## License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE.txt) file for details.
