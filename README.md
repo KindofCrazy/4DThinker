@@ -137,7 +137,7 @@ python check_output_image.py ./dynamic_qa_converted.jsonl
 conda activate 4dthinker
 bash dift/train.sh
 
-or
+OR
 
 bash dift/train_single_gpu.sh
 ```
