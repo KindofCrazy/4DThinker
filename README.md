@@ -9,11 +9,6 @@
 </p> -->
 
 **THU**; **CUHK**; **NUS**; **LMMs-Lab**; **UCLA**
-
-Zhangquan Chen, Manyuan Zhang, Xinlei Yu, Xiang An, Bo Li, Xin Xie, 
-
-ZiDong Wang, Mingze Sun, Shuang Chen, Hongyu Li, Xiaobin Hu, Ruqi Huang
-
 </div>
 
 ## Overview
