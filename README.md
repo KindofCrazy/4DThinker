@@ -4,8 +4,11 @@
 
 <a href="https://arxiv.org/pdf/2510.18632"><img src="https://img.shields.io/badge/arXiv-2503.11651-b31b1b" alt="arXiv"></a>
 <a href="https://huggingface.co/papers/2510.18632"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Paper-orange'></a>
-<!-- <a href="https://huggingface.co/datasets/jankin123/4DThinker-Training-Data"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-blue'></a> -->
-<!-- <a href="https://huggingface.co/jankin123/4DThinker-3B"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-blue'></a> -->
+<a href="https://huggingface.co/datasets/jankin123/4DThinker-Training-Data"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-blue'></a>
+<a href="https://huggingface.co/jankin123/4DThinker-3B"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-blue'></a>
+<!-- <p align="center">
+  🤗 <b>2.0 <a href="#models">Models</a></b> · <b><a href="#datasets">Datasets</a></b> · <b><a href="#citation">Technical Report</a></b>
+</p> -->
 
 ## Overview
 
