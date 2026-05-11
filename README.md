@@ -1,7 +1,7 @@
 <div align="center">
 <h1>4DThinker: Thinking with 4D Imagery for Dynamic Spatial Understanding</h1>
-<!-- <a href="https://arxiv.org/pdf/2510.18632"><img src="https://img.shields.io/badge/arXiv-2503.11651-b31b1b" alt="arXiv"></a>
-<a href="https://huggingface.co/papers/2510.18632"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Paper-orange'></a> -->
+<a href="https://arxiv.org/abs/2605.05997"><img src="https://img.shields.io/badge/arXiv-2503.11651-b31b1b" alt="arXiv"></a>
+<a href="https://huggingface.co/papers/2605.05997"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Paper-orange'></a>
 <a href="https://huggingface.co/datasets/jankin123/4DThinker-Training-Data"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-blue'></a>
 <a href="https://huggingface.co/jankin123/4DThinker-3B"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-4DThinker3B-yellow'></a>
 <!-- <p align="center">
