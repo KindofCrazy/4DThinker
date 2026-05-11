@@ -199,10 +199,10 @@ Thanks for their wonderful works.
 If you find 4DThinker helpful for your work, please cite
 
 ```
-@article{4dthinker,
+@article{chen20264dthinker,
   title={4DThinker: Thinking with 4D Imagery for Dynamic Spatial Understanding},
-  author={},
-  journal={},
+  author={Chen, Zhangquan and Zhang, Manyuan and Yu, Xinlei and An, Xiang and Li, Bo and Xie, Xin and Wang, ZiDong and Sun, Mingze and Chen, Shuang and Li, Hongyu and others},
+  journal={arXiv preprint arXiv:2605.05997},
   year={2026}
 }
 ```
