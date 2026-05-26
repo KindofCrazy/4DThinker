@@ -8,7 +8,7 @@
   🤗 <b>2.0 <a href="#models">Models</a></b> · <b><a href="#datasets">Datasets</a></b> · <b><a href="#citation">Technical Report</a></b>
 </p> -->
 
-**THU**; **CUHK**; **NUS**; **LMMs-Lab**; **UCLA**
+**THU**; **Meituan**; **CUHK**; **NUS**; **LMMs-Lab**; **UCLA**
 </div>
 
 ## Overview
