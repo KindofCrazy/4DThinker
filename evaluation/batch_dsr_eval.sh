@@ -21,6 +21,7 @@ RUN_NAME="${RUN_NAME:-dift_flash_batch}"
 MODEL_PATH="${MODEL_PATH:-model/dift/checkpoints}"
 LATENT_SIZE="${LATENT_SIZE:-4}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-flash_attention_2}"
+VIDEO_MODE="${VIDEO_MODE:-normal}"
 
 # ---------------- Data Args ----------------
 BENCHMARK_PATH="${BENCHMARK_PATH:-./raw_data/DSR_Suite-Data/benchmark.parquet}"
@@ -96,6 +97,7 @@ NUM_SHARDS="${#GPUS[@]}"
     echo "max_new_tokens=${MAX_NEW_TOKENS}"
     echo "latent_size=${LATENT_SIZE}"
     echo "attn_implementation=${ATTN_IMPLEMENTATION}"
+    echo "video_mode=${VIDEO_MODE}"
 } | tee "${RUN_INFO}"
 
 # =============================================================================
@@ -130,6 +132,7 @@ for SHARD in $(seq 0 "$((NUM_SHARDS - 1))"); do
         --max_new_tokens "${MAX_NEW_TOKENS}" \
         --latent_size "${LATENT_SIZE}" \
         --attn_implementation "${ATTN_IMPLEMENTATION}" \
+        --video_mode "${VIDEO_MODE}" \
         > "${SHARD_LOG}" 2>&1 &
 
     PIDS+=("$!")

@@ -28,7 +28,12 @@ from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
 
 from utils import place_input_image, seed_everything
-from task import multiple_input_images_4dthinker_test_preprocess_function, VIDEO_FPS, VIDEO_MAX_PIXELS
+from task import (
+    append_4dthinker_output_format_prompt,
+    multiple_input_images_4dthinker_test_preprocess_function,
+    VIDEO_FPS,
+    VIDEO_MAX_PIXELS,
+)
 
 # Default paths
 DEFAULT_MODEL_PATH = "./model/dift/checkpoints"
@@ -275,6 +280,7 @@ def prepare_sample(
     video_root: str,
     frame_root: str,
     fps: float,
+    video_mode: str = "normal",
 ) -> Optional[Dict]:
     """
     Prepare a single sample: check video existence, extract frames, build image_input and text_input.
@@ -287,13 +293,15 @@ def prepare_sample(
         return None
 
     video_path = os.path.join(video_root, f"{video_id}.mp4")
-    if not os.path.exists(video_path):
-        return None
+    frame_paths = []
+    if video_mode != "text_only":
+        if not os.path.exists(video_path):
+            return None
 
-    frame_dir = os.path.join(frame_root, video_id)
-    frame_paths = extract_frames_from_video(video_path, fps, frame_dir)
-    if not frame_paths:
-        return None
+        frame_dir = os.path.join(frame_root, video_id)
+        frame_paths = extract_frames_from_video(video_path, fps, frame_dir)
+        if not frame_paths:
+            return None
 
     question = record.get("question", "")
     options = record.get("options", record.get("candidates", []))
@@ -335,31 +343,49 @@ def run_inference(
     max_new_tokens: int = 1024,
     temperature: float = 0.7,
     top_p: float = 0.9,
+    video_mode: str = "normal",
 ) -> Tuple[str, str]:
     """
     Run inference on a single sample, returns (raw output, extracted answer letter).
     """
-    # Frame limit: uniformly sample long videos to MAX_INFERENCE_FRAMES to prevent OOM
-    frames = sample.get("image_input")
-    if isinstance(frames, list) and len(frames) > MAX_INFERENCE_FRAMES:
-        indices = np.linspace(0, len(frames) - 1, MAX_INFERENCE_FRAMES, dtype=int)
-        sample = dict(sample)
-        sample["image_input"] = [frames[i] for i in indices]
+    if video_mode == "text_only":
+        conversations = [{
+            "role": "user",
+            "content": [{"type": "text", "text": append_4dthinker_output_format_prompt(sample["text_input"])}],
+        }]
+        texts = [processor.apply_chat_template(conversations, tokenize=False)]
+        inputs = processor(
+            text=[t + "<|im_start|>assistant" for t in texts],
+            return_tensors="pt",
+            padding=True,
+        )
+    else:
+        # Frame limit: uniformly sample long videos to MAX_INFERENCE_FRAMES to prevent OOM
+        frames = sample.get("image_input")
+        if isinstance(frames, list) and len(frames) > MAX_INFERENCE_FRAMES:
+            indices = np.linspace(0, len(frames) - 1, MAX_INFERENCE_FRAMES, dtype=int)
+            sample = dict(sample)
+            sample["image_input"] = [frames[i] for i in indices]
+        if video_mode == "repeat_first":
+            frames = sample.get("image_input")
+            if isinstance(frames, list) and frames:
+                sample = dict(sample)
+                sample["image_input"] = [frames[0]] * len(frames)
 
-    conversations = multiple_input_images_4dthinker_test_preprocess_function(sample)
-    texts = [processor.apply_chat_template(conversations, tokenize=False)]
-    texts = [place_input_image(t, sep_token=None) for t in texts]
-    # Consistent with task.py: multi-frame uses video channel, frames in video_inputs (images is None)
-    image_inputs, video_inputs = process_vision_info(conversations)
+        conversations = multiple_input_images_4dthinker_test_preprocess_function(sample)
+        texts = [processor.apply_chat_template(conversations, tokenize=False)]
+        texts = [place_input_image(t, sep_token=None) for t in texts]
+        # Consistent with task.py: multi-frame uses video channel, frames in video_inputs (images is None)
+        image_inputs, video_inputs = process_vision_info(conversations)
 
-    inputs = processor(
-        text=[t + "<|im_start|>assistant" for t in texts],
-        images=image_inputs,
-        videos=video_inputs,
-        videos_kwargs={"fps": VIDEO_FPS},
-        return_tensors="pt",
-        padding=True,
-    )
+        inputs = processor(
+            text=[t + "<|im_start|>assistant" for t in texts],
+            images=image_inputs,
+            videos=video_inputs,
+            videos_kwargs={"fps": VIDEO_FPS},
+            return_tensors="pt",
+            padding=True,
+        )
     inputs = inputs.to(model.device)
 
     with torch.no_grad():
@@ -458,6 +484,7 @@ def main():
     parser.add_argument("--top_p", type=float, default=0.9)
     parser.add_argument("--max_new_tokens", type=int, default=2048, help="4dthinker outputs latent tokens first, need enough tokens to generate <answer>")
     parser.add_argument("--attn_implementation", type=str, default="flash_attention_2", help="Attention implementation, e.g. flash_attention_2, sdpa, or eager")
+    parser.add_argument("--video_mode", type=str, default="normal", choices=["normal", "text_only", "repeat_first"], help="Ablation mode for visual input")
     parser.add_argument("--latent_size", type=int, default=None, help="Must match training latent_size; defaults to checkpoint config, falls back to 2")
     args = parser.parse_args()
 
@@ -484,6 +511,7 @@ def main():
                 args.video_root,
                 frame_root,
                 VIDEO_FPS,
+                args.video_mode,
             ): r
             for r in records
         }
@@ -543,7 +571,7 @@ def main():
             gt = gt[0]
 
         try:
-            raw, pred = run_inference(sample, model, processor, args.max_new_tokens, args.temperature, args.top_p)
+            raw, pred = run_inference(sample, model, processor, args.max_new_tokens, args.temperature, args.top_p, args.video_mode)
             hit = 1 if pred == gt else 0
             correct += hit
             total_eval += 1
