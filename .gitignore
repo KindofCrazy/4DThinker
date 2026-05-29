@@ -1,7 +1,7 @@
 # Large data files (hosted on HuggingFace)
-data/
-raw_data/
-model/
+/data
+/raw_data
+/model
 
 # Python
 __pycache__/
@@ -13,10 +13,18 @@ build/
 *.so
 
 # Training artifacts
-cache/
-outputs/
+/cache
+/outputs
 *.log
-wandb/
+/wandb
+
+# Local batch/eval outputs
+/evaluation/results/20*_*/
+/evaluation/results/ablation_same_answer_summary_*.json
+
+# Local worktrees
+/.worktrees
+/worktrees
 
 # OS
 .DS_Store
