@@ -12,14 +12,15 @@ import re
 import json
 import tempfile
 import argparse
+import traceback
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, List, Tuple, Dict, Any
 
 import numpy as np
 
-# Ensure src modules can be imported
-SRC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")
+# Ensure DIFT src modules can be imported
+SRC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dift", "src")
 sys.path.insert(0, SRC_DIR)
 
 import torch
@@ -382,7 +383,7 @@ def run_inference(
     pred_letter = extract_option_letter(answer_content)
     if not pred_letter:
         pred_letter = extract_option_letter(raw_answer)
-    # 4dthinker output contains many <|latent_*|>, try stripped text if above fails
+    # 4dthinker output contains many <|latent_*|>, try stripped text if above fails.
     if not pred_letter:
         cleaned = strip_latent_tokens(raw_answer)
         pred_letter = extract_option_letter(cleaned)
@@ -456,6 +457,7 @@ def main():
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--top_p", type=float, default=0.9)
     parser.add_argument("--max_new_tokens", type=int, default=2048, help="4dthinker outputs latent tokens first, need enough tokens to generate <answer>")
+    parser.add_argument("--attn_implementation", type=str, default="flash_attention_2", help="Attention implementation, e.g. flash_attention_2, sdpa, or eager")
     parser.add_argument("--latent_size", type=int, default=None, help="Must match training latent_size; defaults to checkpoint config, falls back to 2")
     args = parser.parse_args()
 
@@ -506,7 +508,10 @@ def main():
     processor.image_processor.min_pixels = PROCESSOR_MIN_PIXELS
     processor.image_processor.max_pixels = PROCESSOR_MAX_PIXELS
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-        args.model_path, device_map={"": 0}, torch_dtype=torch.bfloat16
+        args.model_path,
+        device_map={"": 0},
+        torch_dtype=torch.bfloat16,
+        attn_implementation=args.attn_implementation,
     )
     processor.tokenizer.add_tokens("<|latent_pad|>", special_tokens=True)
     processor.tokenizer.add_tokens("<|latent_start|>", special_tokens=True)
@@ -567,7 +572,8 @@ def main():
         except Exception as e:
             if "out of memory" in str(e).lower():
                 torch.cuda.empty_cache()
-            print(f"[ERROR] Inference failed index={idx}: {e}")
+            print(f"[ERROR] Inference failed index={idx}: {type(e).__name__}: {e!r}")
+            traceback.print_exc()
             video_path = sample.get("video_path") or os.path.join(args.video_root, f"{sample.get('video_id', '')}.mp4")
             results.append({
                 "index": idx,
