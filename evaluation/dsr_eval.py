@@ -376,9 +376,10 @@ def run_inference(
             sample["image_input"] = [frames[i] for i in indices]
         if video_mode in {"repeat_first", "reversed_video"}:
             frames = sample.get("image_input")
-            if isinstance(frames, list) and frames:
-                sample = dict(sample)
-                sample["image_input"] = apply_video_mode_to_frames(frames, video_mode)
+            if not isinstance(frames, list) or not frames:
+                raise ValueError(f"{video_mode} requires a non-empty image_input frame list")
+            sample = dict(sample)
+            sample["image_input"] = apply_video_mode_to_frames(frames, video_mode)
 
         conversations = multiple_input_images_4dthinker_test_preprocess_function(sample)
         texts = [processor.apply_chat_template(conversations, tokenize=False)]
