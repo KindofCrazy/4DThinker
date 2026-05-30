@@ -336,6 +336,14 @@ def prepare_sample(
 MAX_INFERENCE_FRAMES = 50
 
 
+def apply_video_mode_to_frames(frames: List[str], video_mode: str) -> List[str]:
+    if video_mode == "repeat_first" and frames:
+        return [frames[0]] * len(frames)
+    if video_mode == "reversed_video":
+        return list(reversed(frames))
+    return list(frames)
+
+
 def run_inference(
     sample: Dict,
     model,
@@ -366,11 +374,11 @@ def run_inference(
             indices = np.linspace(0, len(frames) - 1, MAX_INFERENCE_FRAMES, dtype=int)
             sample = dict(sample)
             sample["image_input"] = [frames[i] for i in indices]
-        if video_mode == "repeat_first":
+        if video_mode in {"repeat_first", "reversed_video"}:
             frames = sample.get("image_input")
             if isinstance(frames, list) and frames:
                 sample = dict(sample)
-                sample["image_input"] = [frames[0]] * len(frames)
+                sample["image_input"] = apply_video_mode_to_frames(frames, video_mode)
 
         conversations = multiple_input_images_4dthinker_test_preprocess_function(sample)
         texts = [processor.apply_chat_template(conversations, tokenize=False)]
@@ -484,7 +492,7 @@ def main():
     parser.add_argument("--top_p", type=float, default=0.9)
     parser.add_argument("--max_new_tokens", type=int, default=2048, help="4dthinker outputs latent tokens first, need enough tokens to generate <answer>")
     parser.add_argument("--attn_implementation", type=str, default="flash_attention_2", help="Attention implementation, e.g. flash_attention_2, sdpa, or eager")
-    parser.add_argument("--video_mode", type=str, default="normal", choices=["normal", "text_only", "repeat_first"], help="Ablation mode for visual input")
+    parser.add_argument("--video_mode", type=str, default="normal", choices=["normal", "text_only", "repeat_first", "reversed_video"], help="Ablation mode for visual input")
     parser.add_argument("--latent_size", type=int, default=None, help="Must match training latent_size; defaults to checkpoint config, falls back to 2")
     args = parser.parse_args()
 
