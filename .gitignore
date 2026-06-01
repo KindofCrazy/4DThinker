@@ -21,6 +21,7 @@ build/
 # Local batch/eval outputs
 /evaluation/results/20*_*/
 /evaluation/results/ablation_same_answer_summary_*.json
+/evaluation/results/experiement_statistics/
 
 # Local worktrees
 /.worktrees
