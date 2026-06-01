@@ -33,6 +33,7 @@ RESULTS_ROOT="${RESULTS_ROOT:-${SCRIPT_DIR}/results}"
 SEED="${SEED:-42}"
 TEMPERATURE="${TEMPERATURE:-0.7}"
 TOP_P="${TOP_P:-0.9}"
+DO_SAMPLE="${DO_SAMPLE:-true}"
 MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-2048}"
 
 # ---------------- Runtime Args ----------------
@@ -82,6 +83,11 @@ export LIBRARY_PATH="${CUDA_HOME_OVERRIDE}/lib:${LIBRARY_PATH:-}"
 # =============================================================================
 IFS=',' read -r -a GPUS <<< "${GPUS_CSV}"
 NUM_SHARDS="${#GPUS[@]}"
+if [[ "${DO_SAMPLE}" == "false" || "${DO_SAMPLE}" == "0" || "${DO_SAMPLE}" == "no" ]]; then
+    DO_SAMPLE_ARGS=(--no-do_sample)
+else
+    DO_SAMPLE_ARGS=(--do_sample)
+fi
 
 # =============================================================================
 # Record Run Metadata
@@ -95,6 +101,9 @@ NUM_SHARDS="${#GPUS[@]}"
     echo "gpus=${GPUS_CSV}"
     echo "num_shards=${NUM_SHARDS}"
     echo "max_new_tokens=${MAX_NEW_TOKENS}"
+    echo "do_sample=${DO_SAMPLE}"
+    echo "temperature=${TEMPERATURE}"
+    echo "top_p=${TOP_P}"
     echo "latent_size=${LATENT_SIZE}"
     echo "attn_implementation=${ATTN_IMPLEMENTATION}"
     echo "video_mode=${VIDEO_MODE}"
@@ -129,6 +138,7 @@ for SHARD in $(seq 0 "$((NUM_SHARDS - 1))"); do
         --seed "${SEED}" \
         --temperature "${TEMPERATURE}" \
         --top_p "${TOP_P}" \
+        "${DO_SAMPLE_ARGS[@]}" \
         --max_new_tokens "${MAX_NEW_TOKENS}" \
         --latent_size "${LATENT_SIZE}" \
         --attn_implementation "${ATTN_IMPLEMENTATION}" \

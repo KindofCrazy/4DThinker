@@ -352,6 +352,7 @@ def run_inference(
     temperature: float = 0.7,
     top_p: float = 0.9,
     video_mode: str = "normal",
+    do_sample: bool = True,
 ) -> Tuple[str, str]:
     """
     Run inference on a single sample, returns (raw output, extracted answer letter).
@@ -398,13 +399,19 @@ def run_inference(
     inputs = inputs.to(model.device)
 
     with torch.no_grad():
+        generate_kwargs = {
+            "max_new_tokens": max_new_tokens,
+            "do_sample": do_sample,
+            "tokenizer": processor.tokenizer,
+        }
+        if do_sample:
+            generate_kwargs.update({
+                "temperature": temperature,
+                "top_p": top_p,
+            })
         output_ids = model.generate(
             **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=True,
-            temperature=temperature,
-            top_p=top_p,
-            tokenizer=processor.tokenizer,
+            **generate_kwargs,
         )
 
     decoded = processor.tokenizer.decode(output_ids[0], skip_special_tokens=False)
@@ -491,6 +498,7 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--top_p", type=float, default=0.9)
+    parser.add_argument("--do_sample", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--max_new_tokens", type=int, default=2048, help="4dthinker outputs latent tokens first, need enough tokens to generate <answer>")
     parser.add_argument("--attn_implementation", type=str, default="flash_attention_2", help="Attention implementation, e.g. flash_attention_2, sdpa, or eager")
     parser.add_argument("--video_mode", type=str, default="normal", choices=["normal", "text_only", "repeat_first", "reversed_video"], help="Ablation mode for visual input")
@@ -580,7 +588,7 @@ def main():
             gt = gt[0]
 
         try:
-            raw, pred = run_inference(sample, model, processor, args.max_new_tokens, args.temperature, args.top_p, args.video_mode)
+            raw, pred = run_inference(sample, model, processor, args.max_new_tokens, args.temperature, args.top_p, args.video_mode, args.do_sample)
             hit = 1 if pred == gt else 0
             correct += hit
             total_eval += 1
